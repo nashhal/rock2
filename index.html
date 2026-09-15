@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0B1F3A">
+  <meta name="description" content="ROCK — إكسسوارات تقنية مصممة للحياة اليومية.">
+  <title>ROCK — Power your everyday</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="ROCK home">ROCK</a>
+    <nav class="desktop-nav" aria-label="Main navigation">
+      <a href="#shop">Shop</a><a href="#categories">Categories</a><a href="#why">Why ROCK</a><a href="#story">About</a><a href="#contact">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" type="button" aria-label="Search" data-action="search">⌕</button>
+      <button class="icon-btn cart-btn" type="button" aria-label="Cart" data-action="cart">🛒<span id="cartCount">0</span></button>
+      <button class="menu-btn" type="button" aria-label="Open menu" data-action="menu">☰</button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero container">
+      <div class="hero-copy">
+        <span class="eyebrow">ROCK / EVERYDAY TECH</span>
+        <h1>Power your<br><span>everyday.</span></h1>
+        <p>إكسسوارات تقنية تجمع بين التصميم العملي والأداء الموثوق لتكون جزءًا من يومك.</p>
+        <div class="hero-actions"><a class="btn btn-primary" href="#shop">تسوق الآن</a><a class="btn btn-light" href="#categories">استكشف المجموعة</a></div>
+        <div class="hero-proof"><strong>Simple.</strong><span>Reliable.</span><span>Made for everyday.</span></div>
+      </div>
+      <div class="hero-visual" aria-label="ROCK product showcase">
+        <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+        <div class="device device-main"><div class="device-screen">ROCK</div><div class="device-port"></div></div>
+        <div class="floating-card card-one"><small>POWER</small><b>65W</b><span>Fast charging</span></div>
+        <div class="floating-card card-two"><small>ROCK</small><b>24H</b><span>Everyday battery</span></div>
+      </div>
+    </section>
+
+    <section id="categories" class="section container">
+      <div class="section-head"><div><span class="eyebrow">SHOP BY CATEGORY</span><h2>Built around what you use.</h2></div><a class="text-link" href="#shop">عرض الكل ↗</a></div>
+      <div class="category-grid">
+        <a class="category-card" href="#shop" data-filter="Chargers"><span class="category-icon">⚡</span><h3>Chargers</h3><p>طاقة أسرع ليومك</p></a>
+        <a class="category-card" href="#shop" data-filter="Power Banks"><span class="category-icon">◫</span><h3>Power Banks</h3><p>طاقة معك أينما ذهبت</p></a>
+        <a class="category-card" href="#shop" data-filter="Cables"><span class="category-icon">⌁</span><h3>Cables</h3><p>اتصال ثابت وعملي</p></a>
+        <a class="category-card" href="#shop" data-filter="Protection"><span class="category-icon">◇</span><h3>Protection</h3><p>حماية بدون تعقيد</p></a>
+        <a class="category-card" href="#shop" data-filter="Audio"><span class="category-icon">◉</span><h3>Audio</h3><p>صوت يناسب يومك</p></a>
+        <a class="category-card" href="#shop" data-filter="Car"><span class="category-icon">⌂</span><h3>Car</h3><p>حلول ذكية للسيارة</p></a>
+      </div>
+    </section>
+
+    <section id="shop" class="section container shop-section">
+      <div class="section-head"><div><span class="eyebrow">FEATURED PRODUCTS</span><h2>Essentials, refined.</h2></div><div class="shop-tools"><button class="filter active" data-filter="All">All</button><button class="filter" data-filter="Chargers">Chargers</button><button class="filter" data-filter="Power Banks">Power</button><button class="filter" data-filter="Audio">Audio</button></div></div>
+      <div id="productGrid" class="product-grid"></div>
+    </section>
+
+    <section id="why" class="dark-section">
+      <div class="container">
+        <div class="section-head dark-head"><div><span class="eyebrow">WHY ROCK</span><h2>Less noise. More function.</h2></div><p>كل منتج له سبب واضح في مجموعتك اليومية.</p></div>
+        <div class="why-grid"><article><span>01</span><h3>Premium quality</h3><p>خامات وتشطيبات مصممة للاستخدام اليومي.</p></article><article><span>02</span><h3>Smart design</h3><p>تفاصيل بسيطة تجعل الاستخدام أسهل.</p></article><article><span>03</span><h3>Reliable performance</h3><p>أداء ثابت في اللحظات التي تحتاجه فيها.</p></article><article><span>04</span><h3>Customer first</h3><p>تجربة واضحة من المنتج إلى ما بعد الشراء.</p></article></div>
+      </div>
+    </section>
+
+    <section id="story" class="section container story">
+      <div class="story-panel"><span class="eyebrow">ABOUT ROCK</span><h2>Technology should fit your life.</h2><p>ROCK تصنع إكسسوارات تقنية عملية، حديثة، وسهلة الاستخدام — بدون تعقيد زائد.</p><a class="btn btn-dark" href="#contact">تواصل معنا</a></div>
+      <div class="story-stat"><span>ROCK</span><strong>Everyday<br>by design.</strong></div>
+    </section>
+
+    <section id="contact" class="newsletter"><div class="container newsletter-inner"><div><span class="eyebrow">STAY CONNECTED</span><h2>Be first to know.</h2><p>أحدث المنتجات والعروض والتحديثات من ROCK.</p></div><form id="newsletterForm"><label class="sr-only" for="email">Email</label><input id="email" type="email" placeholder="بريدك الإلكتروني" required><button class="btn btn-primary" type="submit">اشترك</button></form></div></section>
+  </main>
+
+  <aside id="cartDrawer" class="drawer" aria-hidden="true"><div class="drawer-head"><h2>السلة</h2><button class="close-btn" data-action="closeCart" aria-label="Close">×</button></div><div id="cartItems" class="cart-items"><p class="empty-state">السلة فارغة حاليًا</p></div><div class="cart-footer"><div><span>الإجمالي</span><strong id="cartTotal">0 SAR</strong></div><button class="btn btn-primary" type="button">إتمام الطلب</button></div></aside>
+  <div id="overlay" class="overlay" hidden></div>
+
+  <footer class="site-footer"><div class="container footer-grid"><div><a class="brand footer-brand" href="#top">ROCK</a><p>Power your everyday.</p></div><div><b>Shop</b><a href="#shop">Products</a><a href="#categories">Categories</a></div><div><b>Support</b><a href="#contact">Contact</a><a href="#contact">Warranty</a></div><div><b>Follow</b><a href="#">Instagram</a><a href="#">TikTok</a></div></div><div class="container footer-bottom"><span>© 2026 ROCK</span><span>Saudi Arabia</span></div></footer>
+  <script src="app.js"></script>
+</body>
+</html>
