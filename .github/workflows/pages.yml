@@ -27,6 +27,8 @@ jobs:
         uses: actions/configure-pages@v5
       - name: Fix hidden UI layers
         run: printf '%s' '[hidden]{display:none!important}' | cat - styles.css > /tmp/styles.css && mv /tmp/styles.css styles.css
+      - name: Attach product image fixer
+        run: python -c "from pathlib import Path; p=Path('index.html'); s=p.read_text(); tag='<script src=\"image-fix.js?v=20260915-images-v2\"></script>'; s=s.replace('</body>',tag+'\\n</body>') if 'image-fix.js' not in s else s; p.write_text(s)"
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
