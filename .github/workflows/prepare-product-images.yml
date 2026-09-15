@@ -1,0 +1,105 @@
+name: Prepare ROCK product images
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - image-fix.js
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download source product assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets/products
+          curl -fsSL 'https://api.github.com/repos/nashhal/ROCK/git/trees/main?recursive=1' -o /tmp/tree.json
+          python - <<'PY'
+          import json, subprocess
+          tree=json.load(open('/tmp/tree.json'))['tree']
+          files=[x['path'] for x in tree if x['path'].startswith('assets/products/') and x['path'].endswith('.webp')]
+          for path in files:
+              subprocess.run(['curl','-fsSL','https://raw.githubusercontent.com/nashhal/ROCK/main/'+path,'-o',path],check=True)
+          print(f'Downloaded {len(files)} source product images')
+          PY
+
+      - name: Prepare clean product cutouts
+        run: |
+          python -m pip install --disable-pip-version-check pillow rembg
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageFilter
+          from rembg import new_session, remove
+          from collections import deque
+          from math import hypot
+
+          ROOT=Path('assets/products'); PADDING=32; ALPHA_THRESHOLD=18
+          MIN_COMPONENT_RATIO=0.00035; KEEP_COMPONENT_RATIO=0.0020; MAX_ANCHOR_DISTANCE=0.34
+
+          def components(alpha):
+              w,h=alpha.size; px=alpha.load(); seen=bytearray(w*h)
+              for y in range(h):
+                  for x in range(w):
+                      i=y*w+x
+                      if seen[i] or px[x,y]<ALPHA_THRESHOLD: continue
+                      q=deque([(x,y)]); seen[i]=1; pts=[]; x1=x2=x; y1=y2=y
+                      while q:
+                          cx,cy=q.popleft(); pts.append((cx,cy)); x1=min(x1,cx); x2=max(x2,cx); y1=min(y1,cy); y2=max(y2,cy)
+                          for nx,ny in ((cx-1,cy),(cx+1,cy),(cx,cy-1),(cx,cy+1)):
+                              if 0<=nx<w and 0<=ny<h:
+                                  ni=ny*w+nx
+                                  if not seen[ni] and px[nx,ny]>=ALPHA_THRESHOLD:
+                                      seen[ni]=1; q.append((nx,ny))
+                      yield {'points':pts,'area':len(pts),'bbox':(x1,y1,x2+1,y2+1),'center':((x1+x2)/2,(y1+y2)/2)}
+
+          def clean_alpha(image):
+              alpha=image.getchannel('A').filter(ImageFilter.MedianFilter(3)); w,h=alpha.size
+              comps=list(components(alpha))
+              if not comps: return image
+              cx,cy=w/2,h/2
+              central=[c for c in comps if hypot(c['center'][0]-cx,c['center'][1]-cy)<=hypot(w,h)*0.45] or comps
+              anchor=max(central,key=lambda c:c['area']); ax,ay=anchor['center']
+              min_area=max(48,int(w*h*MIN_COMPONENT_RATIO)); keep_area=max(256,int(w*h*KEEP_COMPONENT_RATIO)); max_dist=hypot(w,h)*MAX_ANCHOR_DISTANCE
+              out=Image.new('L',(w,h),0); op=out.load()
+              for c in comps:
+                  dist=hypot(c['center'][0]-ax,c['center'][1]-ay)
+                  keep=c['area']>=keep_area or (c['area']>=min_area and dist<=max_dist)
+                  x1,y1,x2,y2=c['bbox']
+                  if (x1<=2 or y1<=2 or x2>=w-2 or y2>=h-2) and c['area']<keep_area*2: keep=False
+                  if keep:
+                      for x,y in c['points']: op[x,y]=255
+              image.putalpha(out.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.MinFilter(3)))
+              return image
+
+          session=new_session('u2net')
+          processed=0
+          for path in sorted(ROOT.glob('*.webp')):
+              source=Image.open(path).convert('RGB')
+              result=remove(source,session=session,alpha_matting=False,post_process_mask=True)
+              image=(result if isinstance(result,Image.Image) else Image.open(result)).convert('RGBA')
+              image=clean_alpha(image); bbox=image.getchannel('A').getbbox()
+              if not bbox: continue
+              l,t,r,b=bbox; l=max(0,l-PADDING); t=max(0,t-PADDING); r=min(image.width,r+PADDING); b=min(image.height,b+PADDING)
+              cropped=image.crop((l,t,r,b)); side=max(cropped.width,cropped.height)
+              canvas=Image.new('RGBA',(side,side),(0,0,0,0)); canvas.alpha_composite(cropped,((side-cropped.width)//2,(side-cropped.height)//2)); canvas.thumbnail((1200,1200),Image.Resampling.LANCZOS)
+              canvas.save(path,'WEBP',lossless=True,method=6); processed+=1
+          print(f'Prepared {processed} clean product images')
+          PY
+
+      - name: Commit prepared assets
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/products
+          if git diff --cached --quiet; then echo 'No image changes'; exit 0; fi
+          git commit -m 'fix: add clean product image assets'
+          git push
