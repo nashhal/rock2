@@ -1,221 +1,53 @@
-const products = [
-  {id:1,name:'ROCK Fast Charger 65W',cat:'Chargers',price:99,rating:4.8,badge:'BEST SELLER',stock:true,desc:'شحن سريع متعدد الاستخدامات للمنزل والمكتب.',uses:['Fast charging'],specs:{Power:'65W',Ports:'USB-C + USB-A',Type:'Fast Charger'}},
-  {id:2,name:'ROCK Power Bank 20K',cat:'Power Banks',price:149,rating:4.7,badge:'NEW',stock:true,desc:'طاقة إضافية بسعة عملية للأيام الطويلة.',uses:['Travel'],specs:{Capacity:'20,000mAh',Output:'20W',Type:'Power Bank'}},
-  {id:3,name:'ROCK Braided Cable',cat:'Cables',price:59,rating:4.6,badge:'ROCK',stock:true,desc:'كابل متين للشحن ونقل البيانات.',uses:['Fast charging','Protection'],specs:{Length:'1.5m',Connector:'USB-C',Type:'Braided Cable'}},
-  {id:4,name:'ROCK Wireless Audio',cat:'Audio',price:179,rating:4.7,badge:'FEATURED',stock:true,desc:'صوت واضح وتجربة مريحة للاستخدام اليومي.',uses:['Everyday'],specs:{Connection:'Bluetooth',Battery:'24h',Type:'Wireless Audio'}},
-  {id:5,name:'ROCK Car Charger',cat:'Car',price:89,rating:4.5,badge:'ROCK',stock:true,desc:'شحن عملي أثناء القيادة مع تصميم صغير.',uses:['Car'],specs:{Power:'30W',Ports:'Dual USB-C',Type:'Car Charger'}},
-  {id:6,name:'ROCK Phone Protection',cat:'Protection',price:79,rating:4.6,badge:'NEW',stock:false,desc:'حماية أنيقة مع تصميم يحافظ على سهولة الاستخدام.',uses:['Protection'],specs:{Material:'Impact Shield',Fit:'Device specific',Type:'Protection'}},
-  {id:7,name:'ROCK Dual Charger',cat:'Chargers',price:119,rating:4.7,badge:'ROCK',stock:true,desc:'منفذان لشحن جهازين في الوقت نفسه.',uses:['Fast charging'],specs:{Power:'40W',Ports:'2× USB-C',Type:'Wall Charger'}},
-  {id:8,name:'ROCK Power Bank Pro',cat:'Power Banks',price:199,rating:4.9,badge:'POPULAR',stock:true,desc:'سعة أكبر وأداء مناسب للسفر والأيام الطويلة.',uses:['Travel'],specs:{Capacity:'27,000mAh',Output:'65W',Type:'Power Bank'}}
-];
+const SOURCE_SCRIPT='https://raw.githubusercontent.com/nashhal/ROCK/main/script.js';
+const SOURCE_PRICES='https://raw.githubusercontent.com/nashhal/ROCK/main/catalog-pricing.js';
+const IMAGE_BASE='https://nashhal.github.io/ROCK/assets/products/';
+const VERIFIED_EXTRA={rkcb144:'c27l.webp',rkcb148:'a60c.webp',rkcb147:'cc60.webp',rkcb145:'a12m.webp',rcb056:'metal3in1.webp',rau0785b:'eb200.webp'};
 
-(() => {
-  const $ = (selector, root=document) => root.querySelector(selector);
-  const $$ = (selector, root=document) => Array.from(root.querySelectorAll(selector));
-  const esc = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]));
+(()=>{
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const grid=$('#productGrid'),count=$('#cartCount'),total=$('#cartTotal'),drawer=$('#cartDrawer'),overlay=$('#overlay'),modal=$('#productModal'),searchLayer=$('#searchLayer'),filterPanel=$('.filter-panel'),menuNav=$('#mobileNav'),searchInput=$('#searchInput');
+  if(!grid||!count||!total||!drawer||!overlay||!modal||!searchLayer||!filterPanel||!menuNav)return;
 
-  const grid = $('#productGrid');
-  const count = $('#cartCount');
-  const total = $('#cartTotal');
-  const drawer = $('#cartDrawer');
-  const overlay = $('#overlay');
-  const modal = $('#productModal');
-  const searchLayer = $('#searchLayer');
-  const filterPanel = $('.filter-panel');
-  const menuNav = $('#mobileNav');
-  const searchInput = $('#searchInput');
-
-  if (!grid || !count || !total || !drawer || !overlay || !modal || !searchLayer || !filterPanel || !menuNav) return;
-
-  const loadCart = () => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem('rock2-cart-v2') || '[]');
-      return Array.isArray(parsed) ? parsed.map(Number).filter(id => products.some(product => product.id === id)) : [];
-    } catch {
-      return [];
-    }
+  const loadCart=()=>{try{const v=JSON.parse(localStorage.getItem('rock2-cart-v3')||'[]');return Array.isArray(v)?v:[]}catch{return[]}};
+  let cart=loadCart(),activeCategories=[],priceRange='all',stockOnly=false,searchTerm='',sortMode='featured',products=[];
+  const persist=()=>{try{localStorage.setItem('rock2-cart-v3',JSON.stringify(cart))}catch{}};
+  const parseExpr=(code,re)=>{const m=code.match(re);if(!m)throw new Error('Source data not found');return Function(`"use strict";return (${m[1]})`)()};
+  const categoryOf=p=>{const s=String(p.category||p.cat||'').toLowerCase(),n=String(p.name||'').toLowerCase();if(s.includes('audio'))return'Audio';if(s.includes('car'))return'Car';if(s.includes('holder'))return'Holders';if(s.includes('lifestyle'))return'Lifestyle';if(/power\s*bank|battery\s*capacity/.test(n))return'Power Banks';if(s.includes('power'))return'Chargers';if(/cable|lightning|micro|type-c/.test(n))return'Cables';return'Other'};
+  const imageFor=p=>{if(!p)return null;if(p.id in VERIFIED_EXTRA)return IMAGE_BASE+VERIFIED_EXTRA[p.id];const raw=p.image||'';if(raw.includes('catalog-placeholder.svg'))return null;const file=raw.split('/').pop();return file&&/\.(webp|png|jpg|jpeg)$/i.test(file)?IMAGE_BASE+file:null};
+  const loadProducts=async()=>{
+    const [a,b]=await Promise.all([fetch(SOURCE_SCRIPT,{cache:'no-store'}),fetch(SOURCE_PRICES,{cache:'no-store'})]);
+    if(!a.ok||!b.ok)throw new Error('Unable to load ROCK catalog');
+    const [script,prices]=await Promise.all([a.text(),b.text()]);
+    const base=parseExpr(script,/const\s+products\s*=\s*(\[[\s\S]*?\]);/);
+    const meta=parseExpr(prices,/const\s+catalogMeta\s*=\s*(\{[\s\S]*?\n\s*\});/);
+    const extras=[];const re=/add\((\{[\s\S]*?\})\);/g;let m;while((m=re.exec(prices))){try{extras.push(Function(`"use strict";return (${m[1]})`)())}catch{}}
+    const priced=base.filter(p=>meta[p.id]).map(p=>({...p,...meta[p.id],distributionPrice:meta[p.id].price,price:meta[p.id].price}));
+    const all=[...priced,...extras].filter((p,i,a)=>a.findIndex(x=>String(x.id)===String(p.id))===i&&Number.isFinite(Number(p.price)));
+    return all.map(p=>({...p,id:String(p.id),cat:categoryOf(p),stock:p.stock!==false,desc:p.desc||p.description||p.name,rating:Number.isFinite(Number(p.rating))?Number(p.rating):null,uses:Array.isArray(p.bestFor)?p.bestFor:[],image:imageFor(p)}));
   };
 
-  let cart = loadCart();
-  let activeCategories = [];
-  let priceRange = 'all';
-  let stockOnly = false;
-  let searchTerm = '';
-  let sortMode = 'featured';
-
-  const persistCart = () => {
-    try { localStorage.setItem('rock2-cart-v2', JSON.stringify(cart)); } catch {}
+  const renderFilterOptions=()=>{
+    const cats=[...new Set(products.map(p=>p.cat))].filter(Boolean).sort();
+    filterPanel.innerHTML=`<div class="filter-head"><strong>تصفية</strong><button type="button" data-action="clearFilters">مسح</button></div><fieldset><legend>الفئة</legend>${cats.map(c=>`<label><input type="checkbox" value="${esc(c)}" data-category> ${esc(c)}</label>`).join('')}</fieldset><fieldset><legend>النطاق السعري</legend><label><input type="radio" name="price" value="all" checked> كل الأسعار</label><label><input type="radio" name="price" value="0-99"> أقل من 100 SAR</label><label><input type="radio" name="price" value="100-149"> 100–149 SAR</label><label><input type="radio" name="price" value="150-999"> 150 SAR فأكثر</label></fieldset><label class="availability"><input id="stockOnly" type="checkbox"> متوفر الآن فقط</label>`;
   };
+  const renderCategories=()=>{const cats=[...new Set(products.map(p=>p.cat))].filter(Boolean).sort();const target=$('#categories .category-grid');if(!target)return;target.innerHTML=cats.map((c,i)=>`<button class="category-card" data-filter="${esc(c)}"><span class="category-number">${String(i+1).padStart(2,'0')}</span><strong>${esc(c)}</strong><small>عرض منتجات ${esc(c)}</small></button>`).join('')};
+  const filtered=()=>products.filter(p=>!activeCategories.length||activeCategories.includes(p.cat)).filter(p=>priceRange==='all'||(priceRange==='0-99'?p.price<100:priceRange==='100-149'?p.price>=100&&p.price<=149:p.price>=150)).filter(p=>!stockOnly||p.stock).filter(p=>!searchTerm||[p.name,p.model,p.barcode,p.cat,p.desc,...p.uses].join(' ').toLowerCase().includes(searchTerm.toLowerCase())).sort((a,b)=>sortMode==='price-asc'?a.price-b.price:sortMode==='price-desc'?b.price-a.price:sortMode==='rating'?(b.rating||0)-(a.rating||0):sortMode==='newest'?String(b.id).localeCompare(String(a.id)):0);
+  const imageHtml=p=>p.image?`<img class="product-image" src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:`<div class="product-image-missing" aria-label="لا توجد صورة أصلية مؤكدة">الصورة غير متوفرة</div>`;
+  const renderProducts=()=>{const list=filtered();grid.innerHTML=list.map(p=>`<article class="product-card" data-product="${esc(p.id)}"><div class="product-media">${p.badge?`<span class="badge">${esc(p.badge)}</span>`:''}<div class="product-visual">${imageHtml(p)}</div></div><div class="product-info"><h3 class="product-name">${esc(p.name)}</h3><p class="product-desc">${esc(p.desc)}</p>${p.rating!==null?`<div class="rating" aria-label="التقييم ${p.rating} من 5">★★★★★ <span>${p.rating}</span></div>`:''}<div class="product-bottom"><strong class="price">${Number(p.price).toFixed(2).replace(/\.00$/,'')} SAR</strong><button class="add" type="button" data-add="${esc(p.id)}" ${p.stock?'':'disabled'}>${p.stock?'أضف للسلة':'غير متوفر'}</button></div></div></article>`).join('');$('#resultSummary').textContent=`${list.length} منتج`;const empty=$('#emptyState');if(empty)empty.hidden=list.length>0};
+  const openCart=()=>{drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');syncOverlay()};
+  const updateCart=()=>{const q=new Map();cart.forEach(id=>q.set(id,(q.get(id)||0)+1));const groups=[...q].map(([id,qty])=>({p:products.find(x=>x.id===id),qty})).filter(x=>x.p);count.textContent=String(cart.length);total.textContent=`${groups.reduce((s,x)=>s+x.p.price*x.qty,0).toFixed(2).replace(/\.00$/,'')} SAR`;const target=$('#cartItems');if(target)target.innerHTML=groups.length?groups.map(x=>`<div class="cart-line"><div><strong>${esc(x.p.name)}</strong><small>${x.p.price} SAR</small><div class="qty"><button type="button" data-qty="${esc(x.p.id)}" data-delta="-1">−</button><b>${x.qty}</b><button type="button" data-qty="${esc(x.p.id)}" data-delta="1">+</button><button class="cart-remove" type="button" data-remove-cart="${esc(x.p.id)}">حذف</button></div></div><strong>${(x.p.price*x.qty).toFixed(2).replace(/\.00$/,'')} SAR</strong></div>`).join(''):'<p class="empty-state">السلة فارغة حاليًا</p>';persist()};
+  const syncOverlay=()=>{const a=drawer.classList.contains('open')||!modal.hidden||!searchLayer.hidden||filterPanel.classList.contains('open');overlay.hidden=!a;document.body.classList.toggle('no-scroll',a)};
+  const closeAll=()=>{drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true');modal.hidden=true;searchLayer.hidden=true;filterPanel.classList.remove('open');menuNav.hidden=true;$('.menu-btn')?.setAttribute('aria-expanded','false');syncOverlay()};
+  const openSearch=()=>{searchLayer.hidden=false;searchInput.value=searchTerm;requestAnimationFrame(()=>searchInput.focus());syncOverlay()};
+  const openModal=id=>{const p=products.find(x=>x.id===id);if(!p)return;$('#modalContent').innerHTML=`<div class="modal-product"><div class="modal-media">${imageHtml(p)}</div><div class="modal-copy"><span class="eyebrow">${esc(p.cat)}</span><h2 id="modalTitle">${esc(p.name)}</h2>${p.model?`<p class="model-line">Model: ${esc(p.model)}</p>`:''}<p>${esc(p.desc)}</p><div class="modal-price">${Number(p.price).toFixed(2).replace(/\.00$/,'')} SAR</div><button class="btn btn-primary" type="button" data-modal-add="${esc(p.id)}" ${p.stock?'':'disabled'}>${p.stock?'أضف للسلة':'غير متوفر'}</button></div></div>`;modal.hidden=false;syncOverlay()};
+  const clearFilters=()=>{activeCategories=[];priceRange='all';stockOnly=false;searchTerm='';$$('[data-category]').forEach(x=>x.checked=false);$$('input[name="price"]').forEach(x=>x.checked=x.value==='all');const s=$('#stockOnly');if(s)s.checked=false;searchInput.value='';renderProducts();renderCategories()};
 
-  const scrollToShop = () => $('#shop')?.scrollIntoView({behavior:'smooth',block:'start'});
-
-  const selectedProducts = () => products
-    .filter(product => !activeCategories.length || activeCategories.includes(product.cat))
-    .filter(product => {
-      if (priceRange === 'all') return true;
-      if (priceRange === '0-99') return product.price < 100;
-      if (priceRange === '100-149') return product.price >= 100 && product.price <= 149;
-      return product.price >= 150;
-    })
-    .filter(product => !stockOnly || product.stock)
-    .filter(product => {
-      if (!searchTerm) return true;
-      const haystack = [product.name, product.cat, product.desc, ...product.uses].join(' ').toLowerCase();
-      return haystack.includes(searchTerm.toLowerCase());
-    })
-    .sort((a,b) => {
-      if (sortMode === 'price-asc') return a.price - b.price;
-      if (sortMode === 'price-desc') return b.price - a.price;
-      if (sortMode === 'rating') return b.rating - a.rating;
-      if (sortMode === 'newest') return b.id - a.id;
-      return a.id - b.id;
-    });
-
-  const priceLabel = () => ({'0-99':'أقل من 100 SAR','100-149':'100–149 SAR','150-999':'150 SAR فأكثر'}[priceRange] || '');
-
-  const renderActiveFilters = () => {
-    const chips = activeCategories.map(category => `<span>${esc(category)} <button type="button" data-remove-category="${esc(category)}" aria-label="إزالة ${esc(category)}">×</button></span>`);
-    if (priceRange !== 'all') chips.push(`<span>${esc(priceLabel())} <button type="button" data-remove-price aria-label="إزالة فلتر السعر">×</button></span>`);
-    if (stockOnly) chips.push('<span>متوفر الآن <button type="button" data-remove-stock aria-label="إزالة فلتر التوفر">×</button></span>');
-    if (searchTerm) chips.push(`<span>بحث: ${esc(searchTerm)} <button type="button" data-clear-search aria-label="إزالة البحث">×</button></span>`);
-    const target = $('#activeFilters');
-    if (target) target.innerHTML = chips.join('');
-  };
-
-  const renderProducts = () => {
-    const list = selectedProducts();
-    grid.innerHTML = list.map(product => `
-      <article class="product-card" data-product="${product.id}">
-        <div class="product-media"><span class="badge">${esc(product.badge)}</span><div class="product-visual"><div class="mock-product" role="img" aria-label="${esc(product.name)}">ROCK</div></div></div>
-        <div class="product-info"><div><h3 class="product-name">${esc(product.name)}</h3><p class="product-desc">${esc(product.desc)}</p></div>
-          <div class="rating" aria-label="التقييم ${product.rating} من 5">★★★★★ <span>${product.rating}</span></div>
-          <div class="product-bottom"><strong class="price">${product.price} SAR</strong><button class="add" type="button" data-add="${product.id}" ${product.stock ? '' : 'disabled'}>${product.stock ? 'أضف للسلة' : 'غير متوفر'}</button></div>
-        </div>
-      </article>`).join('');
-    const summary = $('#resultSummary');
-    if (summary) summary.textContent = `${list.length} ${list.length === 1 ? 'منتج' : 'منتجات'}`;
-    const empty = $('#emptyState');
-    if (empty) empty.hidden = list.length > 0;
-    renderActiveFilters();
-  };
-
-  const cartGroups = () => {
-    const quantities = new Map();
-    cart.forEach(id => quantities.set(id, (quantities.get(id) || 0) + 1));
-    return [...quantities.entries()].map(([id, qty]) => ({product:products.find(p => p.id === id), qty})).filter(item => item.product);
-  };
-
-  const updateCart = () => {
-    cart = cart.filter(id => products.some(product => product.id === id));
-    const groups = cartGroups();
-    count.textContent = String(cart.length);
-    total.textContent = `${groups.reduce((sum,item) => sum + item.product.price * item.qty, 0)} SAR`;
-    const target = $('#cartItems');
-    if (target) target.innerHTML = groups.length ? groups.map(({product,qty}) => `
-      <div class="cart-line"><div><strong>${esc(product.name)}</strong><small>${product.price} SAR</small>
-      <div class="qty"><button type="button" data-qty="${product.id}" data-delta="-1" aria-label="تقليل الكمية">−</button><b>${qty}</b><button type="button" data-qty="${product.id}" data-delta="1" aria-label="زيادة الكمية">+</button><button class="cart-remove" type="button" data-remove-cart="${product.id}">حذف</button></div></div><strong>${product.price * qty} SAR</strong></div>`).join('') : '<p class="empty-state">السلة فارغة حاليًا</p>';
-    persistCart();
-  };
-
-  const syncOverlay = () => {
-    const active = drawer.classList.contains('open') || !modal.hidden || !searchLayer.hidden || filterPanel.classList.contains('open');
-    overlay.hidden = !active;
-    document.body.classList.toggle('no-scroll', active);
-  };
-
-  const closeAll = () => {
-    drawer.classList.remove('open');
-    drawer.setAttribute('aria-hidden','true');
-    modal.hidden = true;
-    searchLayer.hidden = true;
-    filterPanel.classList.remove('open');
-    if (menuNav) { menuNav.hidden = true; $('.menu-btn')?.setAttribute('aria-expanded','false'); }
-    syncOverlay();
-  };
-
-  const openCart = () => { drawer.classList.add('open'); drawer.setAttribute('aria-hidden','false'); syncOverlay(); };
-  const openSearch = () => { searchLayer.hidden = false; if (searchInput) { searchInput.value = searchTerm; requestAnimationFrame(() => searchInput.focus()); } syncOverlay(); };
-
-  const openModal = id => {
-    const product = products.find(item => item.id === id);
-    if (!product) return;
-    const content = $('#modalContent');
-    if (!content) return;
-    content.innerHTML = `<div class="modal-product"><div class="modal-media"><div class="mock-product" role="img" aria-label="${esc(product.name)}">ROCK</div></div><div class="modal-copy"><span class="eyebrow">${esc(product.cat)}</span><h2 id="modalTitle">${esc(product.name)}</h2><div class="rating" aria-label="التقييم ${product.rating} من 5">★★★★★ <span>${product.rating}</span></div><p>${esc(product.desc)}</p><div class="modal-price">${product.price} SAR</div><div class="modal-specs">${Object.entries(product.specs).map(([key,value]) => `<div class="spec"><small>${esc(key)}</small><strong>${esc(value)}</strong></div>`).join('')}</div><button class="btn btn-primary" type="button" data-modal-add="${product.id}" ${product.stock ? '' : 'disabled'}>${product.stock ? 'أضف للسلة' : 'غير متوفر'}</button></div></div>`;
-    modal.hidden = false;
-    syncOverlay();
-  };
-
-  const clearFilters = () => {
-    activeCategories = [];
-    priceRange = 'all';
-    stockOnly = false;
-    searchTerm = '';
-    $$('[data-category]').forEach(input => input.checked = false);
-    $$('input[name="price"]').forEach(input => input.checked = input.value === 'all');
-    const stock = $('#stockOnly'); if (stock) stock.checked = false;
-    if (searchInput) searchInput.value = '';
-    renderProducts();
-  };
-
-  const addToCart = id => {
-    const product = products.find(item => item.id === id);
-    if (!product?.stock) return;
-    cart.push(id); updateCart(); openCart();
-  };
-
-  document.addEventListener('click', event => {
-    const target = event.target instanceof Element ? event.target : null;
-    if (!target) return;
-    const actionEl = target.closest('[data-action]');
-    const action = actionEl?.dataset.action;
-
-    if (action === 'cart') { openCart(); return; }
-    if (action === 'closeCart') { drawer.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); syncOverlay(); return; }
-    if (action === 'search') { openSearch(); return; }
-    if (action === 'closeSearch') { searchLayer.hidden = true; syncOverlay(); return; }
-    if (action === 'filters') { filterPanel.classList.toggle('open'); syncOverlay(); return; }
-    if (action === 'clearFilters') { clearFilters(); filterPanel.classList.remove('open'); syncOverlay(); return; }
-    if (action === 'closeModal') { modal.hidden = true; syncOverlay(); return; }
-    if (action === 'checkout') { alert('صفحة الدفع ستُفعّل عند ربط بوابة الدفع'); return; }
-    if (action === 'menu') { const open = menuNav.hidden; menuNav.hidden = !open; actionEl.setAttribute('aria-expanded', String(open)); return; }
-
-    const add = target.closest('[data-add]');
-    if (add) { event.stopPropagation(); addToCart(Number(add.dataset.add)); return; }
-    const modalAdd = target.closest('[data-modal-add]');
-    if (modalAdd) { addToCart(Number(modalAdd.dataset.modalAdd)); modal.hidden = true; syncOverlay(); return; }
-    const qty = target.closest('[data-qty]');
-    if (qty) {
-      const id = Number(qty.dataset.qty);
-      if (Number(qty.dataset.delta) > 0) addToCart(id);
-      else { const index = cart.indexOf(id); if (index >= 0) cart.splice(index,1); updateCart(); }
-      return;
-    }
-    const remove = target.closest('[data-remove-cart]');
-    if (remove) { cart = cart.filter(id => id !== Number(remove.dataset.removeCart)); updateCart(); return; }
-    const removeCategory = target.closest('[data-remove-category]');
-    if (removeCategory) { activeCategories = activeCategories.filter(category => category !== removeCategory.dataset.removeCategory); $$('[data-category]').forEach(input => input.checked = activeCategories.includes(input.value)); renderProducts(); return; }
-    if (target.closest('[data-remove-price]')) { priceRange='all'; $$('input[name="price"]').forEach(input => input.checked=input.value==='all'); renderProducts(); return; }
-    if (target.closest('[data-remove-stock]')) { stockOnly=false; const stock=$('#stockOnly'); if(stock) stock.checked=false; renderProducts(); return; }
-    if (target.closest('[data-clear-search]')) { searchTerm=''; if(searchInput) searchInput.value=''; renderProducts(); return; }
-
-    const category = target.closest('[data-filter]');
-    if (category) { activeCategories = [category.dataset.filter]; $$('[data-category]').forEach(input => input.checked=activeCategories.includes(input.value)); renderProducts(); scrollToShop(); return; }
-    const need = target.closest('[data-need]');
-    if (need) { const terms={'Fast charging':'charger','Travel':'power','Protection':'protection','Car':'car'}; activeCategories=[]; searchTerm=terms[need.dataset.need] || ''; $$('[data-category]').forEach(input=>input.checked=false); renderProducts(); scrollToShop(); return; }
-    const card = target.closest('.product-card');
-    if (card) openModal(Number(card.dataset.product));
-  });
-
-  $$('[data-category]').forEach(input => input.addEventListener('change', () => { activeCategories=$$('[data-category]:checked').map(item=>item.value); renderProducts(); }));
-  $$('input[name="price"]').forEach(input => input.addEventListener('change', () => { priceRange=input.value; renderProducts(); }));
-  $('#stockOnly')?.addEventListener('change', event => { stockOnly=event.target.checked; renderProducts(); });
-  $('#sortSelect')?.addEventListener('change', event => { sortMode=event.target.value; renderProducts(); });
-  searchInput?.addEventListener('input', event => { searchTerm=event.target.value.trim(); renderProducts(); });
-  $('#newsletterForm')?.addEventListener('submit', event => { event.preventDefault(); const button=event.currentTarget.querySelector('button'); if(button) button.textContent='تم الاشتراك ✓'; event.currentTarget.reset(); });
-  overlay.addEventListener('click', closeAll);
-  document.addEventListener('keydown', event => { if(event.key === 'Escape') closeAll(); });
-
-  renderProducts();
-  updateCart();
+  document.addEventListener('click',e=>{const t=e.target instanceof Element?e.target:null;if(!t)return;const a=t.closest('[data-action]')?.dataset.action;if(a==='cart'){openCart();return}if(a==='closeCart'){drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true');syncOverlay();return}if(a==='search'){openSearch();return}if(a==='closeSearch'){searchLayer.hidden=true;syncOverlay();return}if(a==='filters'){filterPanel.classList.toggle('open');syncOverlay();return}if(a==='clearFilters'){clearFilters();filterPanel.classList.remove('open');syncOverlay();return}if(a==='closeModal'){modal.hidden=true;syncOverlay();return}if(a==='checkout'){alert('صفحة الدفع ستُفعّل عند ربط بوابة الدفع');return}if(a==='menu'){const open=menuNav.hidden;menuNav.hidden=!open;t.closest('[data-action]')?.setAttribute('aria-expanded',String(open));return}
+    const add=t.closest('[data-add]');if(add){cart.push(add.dataset.add);updateCart();openCart();return}const ma=t.closest('[data-modal-add]');if(ma){cart.push(ma.dataset.modalAdd);updateCart();modal.hidden=true;syncOverlay();return}const qty=t.closest('[data-qty]');if(qty){const id=qty.dataset.qty;if(Number(qty.dataset.delta)>0)cart.push(id);else{const i=cart.indexOf(id);if(i>=0)cart.splice(i,1)}updateCart();return}const rm=t.closest('[data-remove-cart]');if(rm){cart=cart.filter(id=>id!==rm.dataset.removeCart);updateCart();return}const fc=t.closest('[data-filter]');if(fc){activeCategories=[fc.dataset.filter];renderProducts();document.querySelector('#shop')?.scrollIntoView({behavior:'smooth'});return}const need=t.closest('[data-need]');if(need){searchTerm=({ 'Fast charging':'charger','Travel':'power','Protection':'protection','Car':'car'}[need.dataset.need]||'');activeCategories=[];renderProducts();document.querySelector('#shop')?.scrollIntoView({behavior:'smooth'});return}const rc=t.closest('[data-remove-category]');if(rc){activeCategories=activeCategories.filter(c=>c!==rc.dataset.removeCategory);renderProducts();return}if(t.closest('[data-remove-price]')){priceRange='all';renderProducts();return}if(t.closest('[data-remove-stock]')){stockOnly=false;renderProducts();return}if(t.closest('[data-clear-search]')){searchTerm='';renderProducts();return}});
+  document.addEventListener('change',e=>{if(!(e.target instanceof Element))return;const t=e.target;if(t.matches('[data-category]'))activeCategories=$$('[data-category]').filter(x=>x.checked).map(x=>x.value);if(t.matches('input[name="price"]'))priceRange=t.value;if(t.id==='stockOnly')stockOnly=t.checked;if(t.id==='sortSelect')sortMode=t.value;renderProducts()});
+  document.addEventListener('input',e=>{if(e.target===searchInput){searchTerm=searchInput.value.trim();renderProducts()}});
+  const start=async()=>{try{products=await loadProducts();renderFilterOptions();renderCategories();renderProducts();updateCart()}catch(err){grid.innerHTML='<div class="empty-state"><strong>تعذر تحميل كتالوج ROCK</strong><p>تحقق من اتصال الإنترنت ثم أعد المحاولة</p></div>';console.error(err)}};
+  start();
 })();
