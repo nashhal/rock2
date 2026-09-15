@@ -33,7 +33,7 @@ jobs:
 
       - name: Prepare clean product cutouts
         run: |
-          python -m pip install --disable-pip-version-check pillow rembg
+          python -m pip install --disable-pip-version-check 'rembg[cpu]'
           python - <<'PY'
           from pathlib import Path
           from PIL import Image, ImageFilter
