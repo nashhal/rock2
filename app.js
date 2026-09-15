@@ -1,49 +1,40 @@
 const products=[
-  {id:1,name:'ROCK Fast Charger',cat:'Chargers',price:99,desc:'شحن سريع للاستخدام اليومي',badge:'BEST SELLER'},
-  {id:2,name:'ROCK Power Bank',cat:'Power Banks',price:149,desc:'طاقة إضافية بحجم عملي',badge:'NEW'},
-  {id:3,name:'ROCK Braided Cable',cat:'Cables',price:59,desc:'كابل متين للاتصال والشحن',badge:'ROCK'},
-  {id:4,name:'ROCK Wireless Audio',cat:'Audio',price:179,desc:'صوت واضح في كل يوم',badge:'FEATURED'},
-  {id:5,name:'ROCK Car Charger',cat:'Car',price:89,desc:'شحن عملي أثناء القيادة',badge:'ROCK'},
-  {id:6,name:'ROCK Phone Protection',cat:'Protection',price:79,desc:'حماية أنيقة لهاتفك',badge:'NEW'},
-  {id:7,name:'ROCK Dual Charger',cat:'Chargers',price:119,desc:'منفذان في شاحن واحد',badge:'ROCK'},
-  {id:8,name:'ROCK Power Bank Pro',cat:'Power Banks',price:199,desc:'سعة أكبر للأيام الطويلة',badge:'POPULAR'}
+{id:1,name:'ROCK Fast Charger 65W',cat:'Chargers',price:99,rating:4.8,badge:'BEST SELLER',stock:true,desc:'شحن سريع متعدد الاستخدامات للمنزل والمكتب.',uses:['Fast charging'],specs:{Power:'65W',Ports:'USB-C + USB-A',Type:'Fast Charger'}},
+{id:2,name:'ROCK Power Bank 20K',cat:'Power Banks',price:149,rating:4.7,badge:'NEW',stock:true,desc:'طاقة إضافية بسعة عملية للأيام الطويلة.',uses:['Travel'],specs:{Capacity:'20,000mAh',Output:'20W',Type:'Power Bank'}},
+{id:3,name:'ROCK Braided Cable',cat:'Cables',price:59,rating:4.6,badge:'ROCK',stock:true,desc:'كابل متين للشحن ونقل البيانات.',uses:['Fast charging','Protection'],specs:{Length:'1.5m',Connector:'USB-C',Type:'Braided Cable'}},
+{id:4,name:'ROCK Wireless Audio',cat:'Audio',price:179,rating:4.7,badge:'FEATURED',stock:true,desc:'صوت واضح وتجربة مريحة للاستخدام اليومي.',uses:['Everyday'],specs:{Connection:'Bluetooth',Battery:'24h',Type:'Wireless Audio'}},
+{id:5,name:'ROCK Car Charger',cat:'Car',price:89,rating:4.5,badge:'ROCK',stock:true,desc:'شحن عملي أثناء القيادة مع تصميم صغير.',uses:['Car'],specs:{Power:'30W',Ports:'Dual USB-C',Type:'Car Charger'}},
+{id:6,name:'ROCK Phone Protection',cat:'Protection',price:79,rating:4.6,badge:'NEW',stock:false,desc:'حماية أنيقة مع تصميم يحافظ على سهولة الاستخدام.',uses:['Protection'],specs:{Material:'Impact Shield',Fit:'Device specific',Type:'Protection'}},
+{id:7,name:'ROCK Dual Charger',cat:'Chargers',price:119,rating:4.7,badge:'ROCK',stock:true,desc:'منفذان لشحن جهازين في الوقت نفسه.',uses:['Fast charging'],specs:{Power:'40W',Ports:'2× USB-C',Type:'Wall Charger'}},
+{id:8,name:'ROCK Power Bank Pro',cat:'Power Banks',price:199,rating:4.9,badge:'POPULAR',stock:true,desc:'سعة أكبر وأداء مناسب للسفر والأيام الطويلة.',uses:['Travel'],specs:{Capacity:'27,000mAh',Output:'65W',Type:'Power Bank'}}
 ];
-let cart=[];
-const grid=document.getElementById('productGrid');
-const count=document.getElementById('cartCount');
-const total=document.getElementById('cartTotal');
-const drawer=document.getElementById('cartDrawer');
-const overlay=document.getElementById('overlay');
-function renderProducts(filter='All'){
-  const list=filter==='All'?products:products.filter(p=>p.cat===filter);
-  grid.innerHTML=list.map(p=>`<article class="product-card"><div class="product-media"><div class="mock-product" aria-label="${p.name}"></div></div><div class="product-info"><div class="product-top"><div><h3 class="product-name">${p.name}</h3><p class="product-desc">${p.desc}</p></div><span class="badge">${p.badge}</span></div><div class="product-bottom"><strong class="price">${p.price} SAR</strong><button class="add" data-add="${p.id}">أضف للسلة</button></div></div></article>`).join('');
-}
-function updateCart(){
-  count.textContent=cart.length;
-  total.textContent=`${cart.reduce((s,p)=>s+p.price,0)} SAR`;
-  const area=document.getElementById('cartItems');
-  area.innerHTML=cart.length?cart.map((p,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid #e5e7eb"><div><strong>${p.name}</strong><div style="color:#6b7280;font-size:12px">${p.price} SAR</div></div><button class="close-btn" data-remove="${i}" aria-label="Remove">×</button></div>`).join(''):'<p class="empty-state">السلة فارغة حاليًا</p>';
-}
-function openCart(){drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');overlay.hidden=false;document.body.style.overflow='hidden'}
-function closeCart(){drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true');overlay.hidden=true;document.body.style.overflow=''}
-
-document.addEventListener('click',e=>{
-  const add=e.target.closest('[data-add]');
-  if(add){const p=products.find(x=>x.id===Number(add.dataset.add));if(p){cart.push(p);updateCart();openCart()}}
-  const remove=e.target.closest('[data-remove]');
-  if(remove){cart.splice(Number(remove.dataset.remove),1);updateCart()}
-  const filter=e.target.closest('[data-filter]');
-  if(filter){renderProducts(filter.dataset.filter);document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===filter));}
-  if(e.target.matches('[data-action="cart"]'))openCart();
-  if(e.target.matches('[data-action="closeCart"]')||e.target===overlay)closeCart();
-});
-
-document.querySelector('[data-action="menu"]').addEventListener('click',()=>{
-  const nav=document.querySelector('.desktop-nav');
-  nav.style.display=nav.style.display==='flex'?'none':'flex';
-  nav.style.position='absolute';nav.style.top='68px';nav.style.insetInline='14px';nav.style.padding='18px';nav.style.background='#fff';nav.style.border='1px solid #e5e7eb';nav.style.borderRadius='18px';nav.style.flexDirection='column';nav.style.alignItems='stretch';nav.style.boxShadow='0 20px 50px rgba(15,23,42,.12)';
-});
-
-document.querySelectorAll('.filter').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(x=>x.classList.remove('active'));btn.classList.add('active');renderProducts(btn.dataset.filter)}));
-document.querySelector('#newsletterForm').addEventListener('submit',e=>{e.preventDefault();e.currentTarget.querySelector('button').textContent='تم الاشتراك ✓'});
+let cart=JSON.parse(localStorage.getItem('rock2-cart')||'[]');
+let activeCategories=[];let priceRange='all';let stockOnly=false;let searchTerm='';let sortMode='featured';
+const $=s=>document.querySelector(s);const $$=s=>document.querySelectorAll(s);
+const grid=$('#productGrid'),count=$('#cartCount'),total=$('#cartTotal'),drawer=$('#cartDrawer'),overlay=$('#overlay'),modal=$('#productModal');
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function filteredProducts(){let list=products.filter(p=>!activeCategories.length||activeCategories.includes(p.cat)).filter(p=>priceRange==='all'||(+priceRange.split('-')[0]<=p.price&&p.price<=+priceRange.split('-')[1])).filter(p=>!stockOnly||p.stock).filter(p=>!searchTerm||[p.name,p.cat,p.desc,...p.uses].join(' ').toLowerCase().includes(searchTerm.toLowerCase()));return [...list].sort((a,b)=>sortMode==='price-asc'?a.price-b.price:sortMode==='price-desc'?b.price-a.price:sortMode==='rating'?b.rating-a.rating:sortMode==='newest'?b.id-a.id:b.id-a.id)}
+function renderProducts(){const list=filteredProducts();grid.innerHTML=list.map(p=>`<article class="product-card" data-product="${p.id}"><div class="product-media"><span class="badge">${esc(p.badge)}</span><div class="product-visual"><div class="mock-product" role="img" aria-label="${esc(p.name)}">ROCK</div></div></div><div class="product-info"><div class="product-top"><div><h3 class="product-name">${esc(p.name)}</h3><p class="product-desc">${esc(p.desc)}</p></div></div><div class="rating">★★★★★ <span>${p.rating}</span></div><div class="product-bottom"><strong class="price">${p.price} SAR</strong><button class="add" type="button" data-add="${p.id}" ${p.stock?'':'disabled'}>${p.stock?'أضف للسلة':'غير متوفر'}</button></div></div></article>`).join('');$('#resultSummary').textContent=`${list.length} منتجات`;$('#emptyState').hidden=list.length>0;renderActiveFilters()}
+function renderActiveFilters(){const chips=[];activeCategories.forEach(c=>chips.push(`<span>${esc(c)} <button type="button" data-remove-filter="${esc(c)}" aria-label="إزالة ${esc(c)}">×</button></span>`));if(priceRange!=='all')chips.push(`<span>${esc(priceLabel())} <button type="button" data-remove-price aria-label="إزالة السعر">×</button></span>`);if(stockOnly)chips.push(`<span>متوفر الآن <button type="button" data-remove-stock aria-label="إزالة فلتر التوفر">×</button></span>`);if(searchTerm)chips.push(`<span>بحث: ${esc(searchTerm)} <button type="button" data-clear-search aria-label="إزالة البحث">×</button></span>`);$('#activeFilters').innerHTML=chips.join('')}
+function priceLabel(){return priceRange==='0-99'?'أقل من 100 SAR':priceRange==='100-149'?'100–149 SAR':'150 SAR فأكثر'}
+function saveCart(){localStorage.setItem('rock2-cart',JSON.stringify(cart))}
+function cartGroups(){const map=new Map();cart.forEach(p=>map.set(p.id,(map.get(p.id)||0)+1));return [...map.entries()].map(([id,qty])=>({product:products.find(p=>p.id===id),qty}))}
+function updateCart(){const groups=cartGroups();count.textContent=cart.length;total.textContent=`${groups.reduce((s,x)=>s+x.product.price*x.qty,0)} SAR`;$('#cartItems').innerHTML=groups.length?groups.map(({product,qty})=>`<div class="cart-line"><div><strong>${esc(product.name)}</strong><small>${product.price} SAR</small><div class="qty"><button type="button" data-qty="${product.id}" data-delta="-1" aria-label="تقليل الكمية">−</button><b>${qty}</b><button type="button" data-qty="${product.id}" data-delta="1" aria-label="زيادة الكمية">+</button><button class="cart-remove" type="button" data-remove-cart="${product.id}">حذف</button></div></div><strong>${product.price*qty} SAR</strong></div>`).join(''):'<p class="empty-state">السلة فارغة حاليًا</p>';saveCart()}
+function openCart(){drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');overlay.hidden=false;document.body.classList.add('no-scroll')}
+function closeCart(){drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true');if(!modal.open){overlay.hidden=true;document.body.classList.remove('no-scroll')}}
+function openSearch(){const layer=$('#searchLayer');layer.hidden=false;$('#searchInput').value=searchTerm;$('#searchInput').focus();document.body.classList.add('no-scroll')}
+function closeSearch(){$('#searchLayer').hidden=true;if(!drawer.classList.contains('open')&&!$('#productModal').hidden){document.body.classList.remove('no-scroll')}}
+function openModal(id){const p=products.find(x=>x.id===id);if(!p)return;$('#modalContent').innerHTML=`<div class="modal-product"><div class="modal-media"><div class="mock-product" role="img" aria-label="${esc(p.name)}">ROCK</div></div><div class="modal-copy"><span class="eyebrow">${esc(p.cat)}</span><h2 id="modalTitle">${esc(p.name)}</h2><div class="rating">★★★★★ <span>${p.rating}</span></div><p>${esc(p.desc)}</p><div class="modal-price">${p.price} SAR</div><div class="modal-specs">${Object.entries(p.specs).map(([k,v])=>`<div class="spec"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('')}</div><button class="btn btn-primary" type="button" data-modal-add="${p.id}" ${p.stock?'':'disabled'}>${p.stock?'أضف للسلة':'غير متوفر'}</button></div></div>`;modal.hidden=false;overlay.hidden=false;document.body.classList.add('no-scroll')}
+function closeModal(){modal.hidden=true;if(!drawer.classList.contains('open')){overlay.hidden=true;document.body.classList.remove('no-scroll')}}
+function toast(msg){const old=$('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),1800)}
+function clearFilters(){activeCategories=[];priceRange='all';stockOnly=false;$$('[data-category]').forEach(x=>x.checked=false);$$('input[name="price"]').forEach(x=>x.checked=x.value==='all');$('#stockOnly').checked=false;searchTerm='';$('#searchInput').value='';renderProducts()}
+function addToCart(id){const p=products.find(x=>x.id===id);if(!p||!p.stock)return;cart.push(p);updateCart();toast('تمت إضافة المنتج إلى السلة');openCart()}
+document.addEventListener('click',e=>{const action=e.target.closest('[data-action]')?.dataset.action;if(action==='cart')openCart();if(action==='closeCart')closeCart();if(action==='search')openSearch();if(action==='closeSearch')closeSearch();if(action==='filters'){$('.filter-panel').classList.toggle('open');overlay.hidden=false;document.body.classList.add('no-scroll')}if(action==='clearFilters'){clearFilters();$('.filter-panel').classList.remove('open');if(!drawer.classList.contains('open')&&modal.hidden)overlay.hidden=true;document.body.classList.remove('no-scroll')}if(action==='menu'){const nav=$('#mobileNav');const open=nav.hidden;nav.hidden=!open;e.target.setAttribute('aria-expanded',String(open))}if(action==='closeModal')closeModal();if(action==='checkout')toast('صفحة الدفع ستُفعّل في المرحلة التالية');const add=e.target.closest('[data-add]');if(add)addToCart(Number(add.dataset.add));const modalAdd=e.target.closest('[data-modal-add]');if(modalAdd){addToCart(Number(modalAdd.dataset.modalAdd));closeModal()}const card=e.target.closest('.product-card');if(card&&!e.target.closest('button'))openModal(Number(card.dataset.product));const cat=e.target.closest('[data-filter]');if(cat){const f=cat.dataset.filter;if(f&&f!=='All'){activeCategories=[f];$$('[data-category]').forEach(x=>x.checked=x.value===f);renderProducts();location.hash='shop'}}const need=e.target.closest('[data-need]');if(need){const n=need.dataset.need;activeCategories=[];searchTerm=n==='Fast charging'?'charger':n==='Travel'?'power':n==='Protection'?'protection':n==='Car'?'car':'';renderProducts();location.hash='shop'}const rem=e.target.closest('[data-remove-filter]');if(rem){activeCategories=activeCategories.filter(x=>x!==rem.dataset.removeFilter);$$('[data-category]').forEach(x=>x.checked=activeCategories.includes(x.value));renderProducts()}if(e.target.closest('[data-remove-price]')){priceRange='all';$$('input[name="price"]').forEach(x=>x.checked=x.value==='all');renderProducts()}if(e.target.closest('[data-remove-stock]')){$('#stockOnly').checked=false;stockOnly=false;renderProducts()}if(e.target.closest('[data-clear-search]')){searchTerm='';$('#searchInput').value='';renderProducts()}const qty=e.target.closest('[data-qty]');if(qty){const id=Number(qty.dataset.qty),delta=Number(qty.dataset.delta),idx=cart.findIndex(p=>p.id===id);if(idx>=0){if(delta>0)cart.push(products.find(p=>p.id===id));else cart.splice(idx,1);updateCart()}}const remove=e.target.closest('[data-remove-cart]');if(remove){cart=cart.filter(p=>p.id!==Number(remove.dataset.removeCart));updateCart()}});
+$$('[data-category]').forEach(x=>x.addEventListener('change',()=>{activeCategories=[...$$('[data-category]:checked')].map(i=>i.value);renderProducts()}));
+$$('input[name="price"]').forEach(x=>x.addEventListener('change',()=>{priceRange=x.value;renderProducts()}));
+$('#stockOnly').addEventListener('change',e=>{stockOnly=e.target.checked;renderProducts()});
+$('#sortSelect').addEventListener('change',e=>{sortMode=e.target.value;renderProducts()});
+$('#searchInput').addEventListener('input',e=>{searchTerm=e.target.value.trim();renderProducts()});
+$('#newsletterForm').addEventListener('submit',e=>{e.preventDefault();e.currentTarget.querySelector('button').textContent='تم الاشتراك ✓';e.currentTarget.reset()});
+$('#overlay').addEventListener('click',()=>{closeCart();closeModal();$('.filter-panel').classList.remove('open');if(!$('#searchLayer').hidden)closeSearch();if(modal.hidden&&!drawer.classList.contains('open')){overlay.hidden=true;document.body.classList.remove('no-scroll')}});
 renderProducts();updateCart();
